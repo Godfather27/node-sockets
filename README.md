@@ -33,3 +33,4 @@ This example inspired by
 * http://socket.io/get-started/chat/
 * http://liamkaufman.com/blog/2012/01/28/testing-socketio-with-mocha-should-and-socketio-client/
 * http://stackoverflow.com/questions/18941736/ensuring-express-app-is-running-before-each-mocha-test#answer-19377023
+* https://devcenter.heroku.com/articles/node-websockets
