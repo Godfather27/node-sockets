@@ -1,3 +1,7 @@
+## try the demo
+
+https://blooming-reef-48511.herokuapp.com/
+
 ## run locally
 
   npm install
