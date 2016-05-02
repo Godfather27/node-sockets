@@ -166,7 +166,7 @@
 		socket.on('authenticated', function(data){
 			if(data.msg === true){
 				if(document.cookie === "" || document.cookie === "username=null"){	
-					$('#loginModal').modal('toggle');
+					$('#loginModal').modal('hide');
 					createCookie("username", user.username, "");
 				}
 				$.each($('.user'), function(index, value){
@@ -176,7 +176,19 @@
 				$.each(data.products, function(index, value){
 					renderAuction(value.name, value.id, value.endTime);
 					initializeClock(value.id+"timer", value.endTime, index);
+					$.each(products[index].bets, function(index, value){
+						console.log(user.username)
+						if(value.user == user.username){
+							$(`#${value.id}`).addClass("bet");
+							showBet(value.id, value.value)
+						}
+					})	
 				})
+				$('#loginModal').modal('hide');
+			} else {
+				console.log("error")
+				$("#username").value = "username has been taken";
+				$('#loginModal').modal('show');
 			}
 		});
 
