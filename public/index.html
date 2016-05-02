@@ -3,25 +3,102 @@
 <head>
 	<title>websocket example</title>
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+	<style>
+		.mask{
+			height: 200px;
+			overflow: hidden;
+			border: 1px solid #ccc;
+		}
+
+		html {
+		  position: relative;
+		  min-height: 100%;
+		}
+
+		body {
+		  margin-bottom: 60px;
+		}
+
+		body > .main {
+		  padding: 60px 15px 0;
+		}
+
+		.text-muted {
+		  margin: 20px 0;
+		}
+
+		.footer {
+			position: absolute;
+			bottom: 0;
+			width: 100%;
+			height: 60px;
+			background-color: #f5f5f5;
+		}
+
+		#remainingTime {
+			border: none;
+		}
+
+	</style>
 </head>
 <body>
 <!-- CONTENT -->
 
+<header>
+	<nav class="navbar navbar-default">
+		<div class="container-fluid container">
+			<div class="navbar-header">
+	      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+	        <span class="sr-only">Toggle navigation</span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	      </button>
+	      <a class="navbar-brand" href="#">Auction</a>
+	    </div>
+	    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+	      <ul class="nav navbar-right">
+	        <li class="dropdown">
+	          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Welcome <span class="user">guest</span>! <span class="caret"></span></a>
+	          <ul class="dropdown-menu">
+	            <li><a href="#">Logout</a></li>
+	          </ul>
+	        </li>
+	      </ul>
+		</div>
+	</nav>
+	<div class="container">
+		<div class="page-header">
+	 	 <h1>Auction list <small>place your bet</small></h1>
+	 	</div>
+	</div>
+</header>
 
+<div class="container main">
+	<div id="auctions" class="row">
+		<!-- render auctions here -->
+	</div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p class="text-muted">Some footer text</p>
+  </div>
+</footer>
 
 <!-- LOGIN - MODAL -->
-	<div id="myModal" class="modal fade" tabindex="-1" role="dialog">
+	<div id="loginModal" class="modal fade" tabindex="-1" role="dialog">
 		<div class="modal-dialog" data-show="true">
 			<div class="modal-content">
 				<div class="modal-header">
 					<h4 class="modal-title">Login</h4>
 				</div>
 				<div class="modal-body">
-					<form action="">
+					<form id="login-form">
 						<div class="input-group">
 							<input id="username" class="form-control" placeholder="username" autocomplete="off" />
 							<span class="input-group-btn">
-								<button class="btn btn-default" type="button">Send</button>
+								<button class="btn btn-default" type="submit">Send</button>
 							</span>
 						</div>
 					</form>
@@ -30,24 +107,126 @@
 		</div><!-- /.modal-dialog -->
 	</div><!-- /.modal -->
 
+<!-- Bet - MODAL -->
+<div id="betModal" class="modal fade" tabindex="-1" role="dialog">
+	<div class="modal-dialog" data-show="true">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title" id="productHeadline">product</h4>
+			</div>
+			<div class="modal-body">
+				<div class="mask">
+					<img id="productImage" class="col-sm-12" src="/img/iPhone6.jpeg" alt="product">
+				</div>
+				<div style="padding:10px 0;">
+					<strong>Remaining Time:</strong> <input id="remainingTime" readonly>
+				</div>
+				<form id="bet-form">
+					<div class="input-group">
+						<input id="bet" type="number" class="form-control" step="0.01" placeholder="0.10" autocomplete="off" />
+						<span class="input-group-btn">
+							<button class="btn btn-default" type="submit">Place Bet</button>
+						</span>
+					</div>
+				</form>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
 <!-- SCRIPTS -->
 	<script src="https://code.jquery.com/jquery-2.2.3.min.js"></script>
 	<script src="socket.io/socket.io.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
 	<script>
+		user = {
+			username: "",
+			loginTime: ""
+		}
 		var socket = io();
-		$('#myModal').modal('toggle')
-		$('form').submit(function(){
+		$('#loginModal').modal('toggle')
+		$('#login-form').submit(function(){
 			socket.emit('login', $('#username').val());
+			user.username = $('#username').val();
 			$('#username').val('');
 			return false;
 		});
-		socket.on('authenticated', function(msg){
-			$('#myModal').modal('toggle')
+		socket.on('authenticated', function(data){
+			if(data.msg === true){
+				$('#loginModal').modal('toggle');
+				$.each($('.user'), function(index, value){
+					$('.user')[index].innerHTML = user.username;
+				});
+				$.each(data.products, function(index, value){
+					renderAuction(value.name, value.id);
+				})
+			}
 		});
 		socket.on('chat message', function(msg){
 			$('#messages').append($('<li>').text(msg));
 		});
+
+		$('#bet-form').submit(function(){
+			console.log(`your bet of ${$('#bet')[0].value} has been set`)
+		})
+
+		function toggleBet(productName){
+			$('#productHeadline')[0].innerHTML = productName;
+			$('#productImage')[0].src = "img/"+ productName + ".jpeg";
+			initializeClock('remainingTime', new Date("May 2, 2016 18:13:00"));
+			$('#betModal').modal('toggle');
+		}
+
+		function renderAuction(productName, betId){
+			$('#auctions').append(
+				`<div id="${betId}" class="col-sm-6 col-md-4">
+			    <div class="thumbnail">
+			    	<div class="mask">
+			   	   <img class="col-sm-12" src="img/${productName}.jpeg" alt="${productName}">
+			   	  </div>
+			      <div class="caption clearfix">
+			        <h3>${productName}</h3>
+			        <p>Place your bet on the ${productName}</p>
+			        <p><a href="#" onClick='toggleBet("${productName}")' class="btn btn-primary pull-right" role="button">Place new bet</a></p>
+			      </div>
+			    </div>
+			  </div>`
+		  );
+		}
+
+		function initializeClock(id, endtime){
+		  var clock = document.getElementById(id);
+		  var timeinterval = setInterval(function(){
+		    var t = getTimeRemaining(endtime);
+		    var clockValue = "";
+		    if(t.days != 0)
+		    	clockValue += t.days  + ' days,' + ' '
+		    clockValue += t.hours   + 'h ' +
+		                  t.minutes + 'm ' +
+		                  t.seconds + 's';
+		    clock.value = clockValue;
+		    							
+		    if(t.total<=0){
+		      clearInterval(timeinterval);
+		    }
+		  },1000);
+		}
+
+		function getTimeRemaining(endtime){
+		  var t = Date.parse(endtime) - Date.parse(new Date());
+		  var seconds = Math.floor( (t/1000) % 60 );
+		  var minutes = Math.floor( (t/1000/60) % 60 );
+		  var hours = Math.floor( (t/(1000*60*60)) % 24 );
+		  var days = Math.floor( t/(1000*60*60*24) );
+		  return {
+		    'total': t,
+		    'days': days,
+		    'hours': hours,
+		    'minutes': minutes,
+		    'seconds': seconds
+		  };
+		}
 	</script>
 </body>
 </html>

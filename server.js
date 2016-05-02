@@ -1,3 +1,5 @@
+'use strict'
+
 const express = require('express');
 const app = express();
 const http = require('http').Server(app);
@@ -11,6 +13,14 @@ http.listen(port, function(){
 });
 
 
+let products = [
+				{name: 'iPhone6', id: '12345'},
+				{name: 'Samsung Galaxy',id: '12346'},
+				{name: 'Pokemon Firered',id: '12347'},
+				{name: 'Playstation 4',id: '12348'},
+				{name: 'Kartoffelsalat',id: '12349'}
+				]
+
 io.on('connection', function(socket){
   console.log('a user connected');
 
@@ -18,6 +28,11 @@ io.on('connection', function(socket){
     console.log(`got message '${msg}', broadcasting to all`);
     io.emit('chat message', msg);
   });
+
+  socket.on('login', function(username){
+	console.log(`${username} logged in`);
+	socket.emit('authenticated', {msg: true, products: products});
+  })
 
   socket.on('disconnect', function(){
     console.log('user disconnected');

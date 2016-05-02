@@ -2,7 +2,7 @@
   "name": "node-websocket-example",
   "version": "1.0.0",
   "description": "a node app that serves static html over http and handles websockets",
-  "main": "index.js",
+  "main": "server.js",
   "dependencies": {
     "express": "^4.13.4",
     "socket.io": "^1.4.5"
@@ -11,12 +11,22 @@
     "should": "^8.3.1"
   },
   "scripts": {
-    "start": "node index.js",
+    "start": "node server.js",
     "test": "mocha test.js"
   },
-  "author": {
-    "name": "Brigitte Jellinek",
-    "email": "brigitte.jellinek@fh-salzburg.ac.at"
-  },
+  "contributors": [
+	  {
+	    "name": "Brigitte Jellinek",
+	    "email": "brigitte.jellinek@fh-salzburg.ac.at"
+	  },
+	  {
+		"name": "Josef Krabath",
+		"email": "fhs37235@fh-salzburg.ac.at"
+  	  },
+	  {
+		"name": "Sebastian Huber",
+		"email": "fhs37229@fh-salzburg.ac.at"
+	  }
+  ],
   "license": "MIT"
 }
