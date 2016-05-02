@@ -126,7 +126,7 @@
 					<img id="productImage" class="col-sm-12" src="/img/iPhone6.jpeg" alt="product">
 				</div>
 				<div style="padding:10px 0;">
-					<strong>Remaining Time:</strong> <input id="remainingTime" readonly>
+					<strong>Remaining Time:</strong> <input id="remainingTime">
 				</div>
 				<form id="bet-form">
 					<div class="input-group">
@@ -147,7 +147,7 @@
 	<script src="socket.io/socket.io.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
 	<script>
-		var timeinterval
+  	var activeInput
 		var user = {
 			username: "",
 			loginTime: ""
@@ -175,16 +175,20 @@
 				products = data.products;
 				$.each(data.products, function(index, value){
 					renderAuction(value.name, value.id, value.endTime);
+					initializeClock(value.id+"timer", value.endTime, index);
 				})
 			}
 		});
 
+		socket.on('end', function(data){
+			console.log(data)
+		})
+
 		$('#bet-form').submit(function(){
-			if($('#bet').val() >0){
+			if($('#bet').val() > 0){
 				$('#betModal').modal('toggle')
+				socket.emit('setBet', {id: $('#modalId').val(), value: $('#bet').val(), user: user.username})
 				showBet($('#modalId').val(), $('#bet').val())
-			} else {
-				$('#bet').style = "border-color: red;"
 			}
 			return false;
 		})
@@ -206,7 +210,7 @@
 			$('#productHeadline')[0].innerHTML = productName;
 			$('#modalId').val(betId);
 			$('#productImage')[0].src = "img/"+ productName + ".jpeg";
-			initializeClock('remainingTime', new Date(endTime));
+			activeInput = betId+"timer";
 			$('#betModal').modal('toggle');
 		}
 
@@ -220,9 +224,27 @@
 				   	  </div>
 				      <div class="caption clearfix">
 					      <div class="your-bet invisible">Hello World</div>
-				        <h3>${productName}</h3>
+					      <h3>${productName}</h3>
 				        <p>Place your bet on the ${productName}</p>
+				        <input readonly id="${betId}timer" >
 				        <p><a href="#" onClick='toggleBet("${productName}", "${endTime}", "${betId}")' class="btn btn-primary pull-right" role="button">Place new bet</a></p>
+				      </div>
+				    </div>
+				  </div>`
+			  );
+			} else {
+				$('#auctions').append(
+					`<div id="${betId}" class="col-sm-6 col-md-4">
+				    <div class="thumbnail">
+				    	<div class="mask">
+				   	   <img class="col-sm-12" src="img/${productName}.jpeg" alt="${productName}">
+				   	  </div>
+				      <div class="caption clearfix">
+					      <div class="your-bet invisible">Hello World</div>
+					      <h3>${productName}</h3>
+				        <p>you can't bid on ${productName} anymore</p>
+				        <input readonly id="${betId}timer" >
+				        <p><a href="#" class="btn btn-primary disabled pull-right" role="button">expired</a></p>
 				      </div>
 				    </div>
 				  </div>`
@@ -231,16 +253,14 @@
 		}
 
 		function showBet(betId, price){
-			$(`#${betId} .your-bet`)[0].innerHTML = 'you bet €'+price;
+			$(`#${betId} .your-bet`)[0].innerHTML = 'you bet €' + rightPadding(price, 2);
 			$(`#${betId} .your-bet`).removeClass("invisible");
 			$(`#${betId}`).addClass("bet");
 		}
 
-		function initializeClock(id, endTime){
-		  var clock = document.getElementById(id);
-		  if(timeinterval != undefined)
-		  	clearInterval(timeinterval)
-		  timeinterval = setInterval(function(){
+		function initializeClock(id, endTime, num){
+		  var clock = document.getElementById(id)
+		  products[num].timer = setInterval(function(){
 		    var t = getTimeRemaining(endTime);
 		    var clockValue = "";
 		    if(t.days != 0)
@@ -249,15 +269,18 @@
 					clockValue += t.hours   + 'h '
 				if(t.minutes != 0)
 					clockValue += t.minutes + 'm '
-				if(t.seconds > 0)
+				if(t.total > 0)
 		      clockValue += t.seconds + 's';
 		    else
 		    	clockValue = "auction has closed"
 		    
 		    clock.value = clockValue;
-		    							
-		    if(t.total<=0){
-		      clearInterval(timeinterval);
+
+		    if(id === activeInput){
+		   		$("#remainingTime")[0].value = clockValue;
+				}
+		    if(t.total <= 0){
+		      clearInterval(products[num].timer);
 		    }
 		  },1000);
 		}
@@ -305,6 +328,30 @@
         if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
 	    }
 	    return null;
+		}
+
+		function rightPadding(price, decimals){
+			if(price.toString().indexOf(".")===-1){
+				price += "."
+				for(let i=0; i < decimals; i+=1){
+					price += "0"
+				}
+				return price
+			}
+			padds = (decimals + 1) - (price.toString().length - price.toString().indexOf("."))
+			for(let i=0; i < padds; i+=1){
+				price += 0
+			}
+			return price;
+		}
+
+		function findById(source, id) {
+		  for (var i = 0; i < source.length; i++) {
+		    if (source[i].id === id) {
+		      return i;
+		    }
+		  }
+		  return -1;
 		}
 
 		readData()
