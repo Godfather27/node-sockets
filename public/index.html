@@ -8,6 +8,12 @@
 			height: 200px;
 			overflow: hidden;
 			border: 1px solid #ccc;
+			background-color: white;
+		}
+
+		.bet > *{
+			border-color: #204d74;
+			background-color: #AFCEE9;
 		}
 
 		html {
@@ -20,7 +26,7 @@
 		}
 
 		body > .main {
-		  padding: 60px 15px 0;
+		  padding: 0 15px;
 		}
 
 		.text-muted {
@@ -61,7 +67,7 @@
 	        <li class="dropdown">
 	          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Welcome <span class="user">guest</span>! <span class="caret"></span></a>
 	          <ul class="dropdown-menu">
-	            <li><a href="#">Logout</a></li>
+	            <li><a href="#" onClick="logout()">Logout</a></li>
 	          </ul>
 	        </li>
 	      </ul>
@@ -124,7 +130,8 @@
 				</div>
 				<form id="bet-form">
 					<div class="input-group">
-						<input id="bet" type="number" class="form-control" step="0.01" placeholder="0.10" autocomplete="off" />
+						<input id="modalId" type="hidden"/>
+						<input id="bet" type="number" max="1000000" class="form-control" step="0.01" placeholder="0.10" autocomplete="off" />
 						<span class="input-group-btn">
 							<button class="btn btn-default" type="submit">Place Bet</button>
 						</span>
@@ -140,71 +147,112 @@
 	<script src="socket.io/socket.io.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
 	<script>
-		user = {
+		var timeinterval
+		var user = {
 			username: "",
 			loginTime: ""
 		}
+		var products = {}
 		var socket = io();
-		$('#loginModal').modal('toggle')
+		
 		$('#login-form').submit(function(){
 			socket.emit('login', $('#username').val());
 			user.username = $('#username').val();
+			user.loginTime = new Date();
 			$('#username').val('');
 			return false;
 		});
+
 		socket.on('authenticated', function(data){
 			if(data.msg === true){
-				$('#loginModal').modal('toggle');
+				if(document.cookie === ""){
+					$('#loginModal').modal('toggle');
+					saveData();
+				}
 				$.each($('.user'), function(index, value){
 					$('.user')[index].innerHTML = user.username;
 				});
+				products = data.products;
 				$.each(data.products, function(index, value){
-					renderAuction(value.name, value.id);
+					renderAuction(value.name, value.id, value.endTime);
 				})
 			}
 		});
-		socket.on('chat message', function(msg){
-			$('#messages').append($('<li>').text(msg));
-		});
 
 		$('#bet-form').submit(function(){
-			console.log(`your bet of ${$('#bet')[0].value} has been set`)
+			if($('#bet').val() >0){
+				$('#betModal').modal('toggle')
+				showBet($('#modalId').val(), $('#bet').val())
+			} else {
+				$('#bet').style = "border-color: red;"
+			}
+			return false;
 		})
 
-		function toggleBet(productName){
+		function logout(){
+			user = {
+				username: "",
+				loginTime: ""
+			}
+			$.each($('.user'), function(index, value){
+					$('.user')[index].innerHTML = "Guest";
+				});
+			$('#loginModal').modal('toggle');
+			$('#auctions')[0].innerHTML = "";
+		}
+
+		function toggleBet(productName, endTime, betId){
 			$('#productHeadline')[0].innerHTML = productName;
+			$('#modalId').val(betId);
 			$('#productImage')[0].src = "img/"+ productName + ".jpeg";
-			initializeClock('remainingTime', new Date("May 2, 2016 18:13:00"));
+			initializeClock('remainingTime', new Date(endTime));
 			$('#betModal').modal('toggle');
 		}
 
-		function renderAuction(productName, betId){
-			$('#auctions').append(
-				`<div id="${betId}" class="col-sm-6 col-md-4">
-			    <div class="thumbnail">
-			    	<div class="mask">
-			   	   <img class="col-sm-12" src="img/${productName}.jpeg" alt="${productName}">
-			   	  </div>
-			      <div class="caption clearfix">
-			        <h3>${productName}</h3>
-			        <p>Place your bet on the ${productName}</p>
-			        <p><a href="#" onClick='toggleBet("${productName}")' class="btn btn-primary pull-right" role="button">Place new bet</a></p>
-			      </div>
-			    </div>
-			  </div>`
-		  );
+		function renderAuction(productName, betId, endTime){
+			if(getTimeRemaining(endTime).total > 0){
+				$('#auctions').append(
+					`<div id="${betId}" class="col-sm-6 col-md-4">
+				    <div class="thumbnail">
+				    	<div class="mask">
+				   	   <img class="col-sm-12" src="img/${productName}.jpeg" alt="${productName}">
+				   	  </div>
+				      <div class="caption clearfix">
+					      <div class="your-bet invisible">Hello World</div>
+				        <h3>${productName}</h3>
+				        <p>Place your bet on the ${productName}</p>
+				        <p><a href="#" onClick='toggleBet("${productName}", "${endTime}", "${betId}")' class="btn btn-primary pull-right" role="button">Place new bet</a></p>
+				      </div>
+				    </div>
+				  </div>`
+			  );
+			}
 		}
 
-		function initializeClock(id, endtime){
+		function showBet(betId, price){
+			$(`#${betId} .your-bet`)[0].innerHTML = 'you bet €'+price;
+			$(`#${betId} .your-bet`).removeClass("invisible");
+			$(`#${betId}`).addClass("bet");
+		}
+
+		function initializeClock(id, endTime){
 		  var clock = document.getElementById(id);
-		  var timeinterval = setInterval(function(){
-		    var t = getTimeRemaining(endtime);
+		  if(timeinterval != undefined)
+		  	clearInterval(timeinterval)
+		  timeinterval = setInterval(function(){
+		    var t = getTimeRemaining(endTime);
 		    var clockValue = "";
 		    if(t.days != 0)
 		    	clockValue += t.days  + ' days,' + ' '
-		    clockValue += t.hours   + 'h ' +
-		                  t.minutes + 'm ' +
-		                  t.seconds + 's';
+		    if(t.hours != 0)
+					clockValue += t.hours   + 'h '
+				if(t.minutes != 0)
+					clockValue += t.minutes + 'm '
+				if(t.seconds > 0)
+		      clockValue += t.seconds + 's';
+		    else
+		    	clockValue = "auction has closed"
+		    
 		    clock.value = clockValue;
 		    							
 		    if(t.total<=0){
@@ -213,8 +261,8 @@
 		  },1000);
 		}
 
-		function getTimeRemaining(endtime){
-		  var t = Date.parse(endtime) - Date.parse(new Date());
+		function getTimeRemaining(endTime){
+		  var t = Date.parse(endTime) - Date.parse(new Date());
 		  var seconds = Math.floor( (t/1000) % 60 );
 		  var minutes = Math.floor( (t/1000/60) % 60 );
 		  var hours = Math.floor( (t/(1000*60*60)) % 24 );
@@ -227,6 +275,21 @@
 		    'seconds': seconds
 		  };
 		}
+
+		function saveData(){
+			document.cookie = user.username;
+		}
+
+		function readData(){
+			user.username = document.cookie
+			if(user.username === ""){
+				$('#loginModal').modal('toggle')
+			} else {
+				socket.emit('login', user.username)
+			}
+		}
+
+		readData()
 	</script>
 </body>
 </html>

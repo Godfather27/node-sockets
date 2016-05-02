@@ -14,12 +14,32 @@ http.listen(port, function(){
 
 
 let products = [
-				{name: 'iPhone6', id: '12345'},
-				{name: 'Samsung Galaxy',id: '12346'},
-				{name: 'Pokemon Firered',id: '12347'},
-				{name: 'Playstation 4',id: '12348'},
-				{name: 'Kartoffelsalat',id: '12349'}
-				]
+									{
+										name: 'iPhone6',
+										id: '12345',
+										endTime: "May 2, 2016 18:13:00"
+									},
+									{
+										name: 'Samsung Galaxy',
+										id: '12346',
+										endTime: "May 2, 2016 18:13:00"
+									},
+									{
+										name: 'Pokemon Firered',
+										id: '12347',
+										endTime: "May 2, 2016 14:45:00"
+									},
+									{
+										name: 'Playstation 4',
+										id: '12348',
+										endTime: "May 2, 2016 18:13:00"
+									},
+									{
+										name: 'Kartoffelsalat',
+										id: '12349',
+										endTime: "May 2, 2016 18:13:00"
+									}
+								]
 
 io.on('connection', function(socket){
   console.log('a user connected');
