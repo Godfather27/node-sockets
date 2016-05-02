@@ -11,6 +11,10 @@
 			background-color: white;
 		}
 
+		.win > *{
+			background-color: #AFE9BB !important;
+		}
+
 		.bet > *{
 			border-color: #204d74;
 			background-color: #AFCEE9;
@@ -177,7 +181,6 @@
 					renderAuction(value.name, value.id, value.endTime);
 					initializeClock(value.id+"timer", value.endTime, index);
 					$.each(products[index].bets, function(index, value){
-						console.log(user.username)
 						if(value.user == user.username){
 							$(`#${value.id}`).addClass("bet");
 							showBet(value.id, value.value)
@@ -193,7 +196,10 @@
 		});
 
 		socket.on('end', function(data){
-			console.log(data)
+			if(data.user === user.username){
+				$(`#${data.product}timer`).val("you won")
+				$(`#${data.product}`).addClass("win")
+			}
 		})
 
 		$('#bet-form').submit(function(){
@@ -206,6 +212,7 @@
 		})
 
 		function logout(){
+			socket.emit('logout', user.username)
 			createCookie("username", "", -1)
 			user = {
 				username: "",

@@ -19,14 +19,16 @@ let products = [
 									{
 										name: 'iPhone6',
 										id: '12345',
-										endTime: "May 3, 2016 11:13:00",
-										expired: false,
-										bets: []
+										endTime: "May 3, 2016 00:54:00",
+										expired: true,
+										bets: [
+											{ id: '12345', value: '12', user: 'Seb' }
+										]
 									},
 									{
 										name: 'Samsung Galaxy',
 										id: '12346',
-										endTime: "May 3, 2016 16:31:00",
+										endTime: "May 3, 2016 00:56:00",
 										expired: false,
 										bets: []
 									},
@@ -61,16 +63,16 @@ io.on('connection', function(socket){
 		console.log(products[findById(products, obj.id)].bets[0])
   });
 	
-	for(var i = 0; i < products.length; i+=1){
-		if(new Date(products[i].endTime) < new Date() && products[i].expired === false){
-			socket.emit('end', products[i].id)
-			let winner = getWinner(products[i].bets);
-			if (winner === -1)
-				winner = "no winner"
-			else
-				winner = products[i].bets[winner].user
-			io.sockets.emit('end', {product: products[i].id, user: winner})
-			products[i].expired = true
+	function checkWinner(){
+		for(var i = 0; i < products.length; i+=1){
+			if(products[i].expired === true){
+				let winner = getWinner(products[i].bets);
+				if (winner === -1)
+					winner = "no winner"
+				else
+					winner = products[i].bets[winner].user
+				socket.emit('end', {product: products[i].id, user: winner})
+			}
 		}
 	}
 
@@ -95,13 +97,20 @@ io.on('connection', function(socket){
 			console.log(`${username} darf ned rein`)
 			socket.emit('authenticated', {msg: false})
 		}
-		
+		checkWinner()
+  })
+
+  socket.on('logout', function(name){
+			if(user[findById(user, socket)] != undefined){
+	   	  user[findById(user, socket)].loggedout = true
+				console.log(name + ' logged out')
+	   	}
   })
 
   socket.on('disconnect', function(){
     console.log('user disconnected');
-    if(user[findById(user,socket)] != undefined)
-	    user[findById(user,socket)].loggedout = true
+    if(user[findById(user, socket)] != undefined)
+	    user[findById(user, socket)].loggedout = true
   })
 });
 
