@@ -76,10 +76,9 @@ io.on('connection', function(socket){
 			auctions[data.id].bets[data.value] = []
 
 		auctions[data.id].bets[data.value].push(data.username)
-		console.log(auctions[data.id].bets[data.value])
 		console.log(`bet set ${data.username}: € ${data.value}`)
 
-		socket.emit('feedback', {id: data.id, value: data.value, unique: betIsUnique(data.id, data.value), best: isWinner(data.id, data.value, data.username)})
+		socket.emit('feedback', {id: data.id, value: data.value, unique: betIsUnique(data.id, data.value), best: isWinner(data.id, data.username)})
   })
 
   socket.on('logout', function(name){
@@ -100,13 +99,21 @@ io.on('connection', function(socket){
     
 });
 
-function isWinner(id, value, username){
+function isWinner(id, username){
 	// no one set a bet
 	if(auctions[id].bets.length === 0)
 		return false
 
 	// check bets ascending after another if unique
-	//if()
+	let keys = Object.keys(auctions[id].bets)
+	keys.sort()
+
+	for(let i = 0; i < keys.length; i+=1){
+		if(auctions[id].bets[keys[i]].length === 1)
+			if(auctions[id].bets[keys[i]][0] === username)
+				return true;
+	}
+	return false;
 }
 
 function betIsUnique(id, value){
