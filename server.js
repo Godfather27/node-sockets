@@ -11,6 +11,7 @@ app.use(express.static('public'));
 
 http.listen(port, function(){
   console.log(`webserver listening on *:${port}`);
+  timeIsExpired()
 });
 
 let users = {}
@@ -24,7 +25,7 @@ let auctions = {
 	},
 	'12346' : {
 		name: 'Samsung Galaxy',
-		endTime: moment().add(10, 'm').toDate(),
+		endTime: moment().add(25, 's').toDate(),
 		expired: false,
 		bets: {}
 	},
@@ -78,7 +79,7 @@ io.on('connection', function(socket){
 		auctions[data.id].bets[data.value].push(data.username)
 		console.log(`bet set ${data.username}: € ${data.value}`)
 
-		socket.emit('feedback', {id: data.id, value: data.value, unique: betIsUnique(data.id, data.value), best: isWinner(data.id, data.username)})
+		socket.emit('feedback', {id: data.id, value: data.value, betsSet: betsSet(data.id, data.value), best: isWinner(data.id, data.username)})
   })
 
   socket.on('logout', function(name){
@@ -100,10 +101,6 @@ io.on('connection', function(socket){
 });
 
 function isWinner(id, username){
-	// no one set a bet
-	if(auctions[id].bets.length === 0)
-		return false
-
 	// check bets ascending after another if unique
 	let keys = Object.keys(auctions[id].bets)
 	keys.sort()
@@ -116,10 +113,8 @@ function isWinner(id, username){
 	return false;
 }
 
-function betIsUnique(id, value){
-	if(auctions[id].bets[value].length === 1)
-		return true
-	return false
+function betsSet(id, value){
+  return auctions[id].bets[value].length
 }
 
 function alreadyLoggedIn(username){
@@ -139,6 +134,34 @@ function findUser(socket){
 			return myUser
 	}
 	return undefined
+}
+
+// look if time is expired
+function timeIsExpired() {
+  setInterval(function(){
+    let keys = Object.keys(auctions)
+
+    for (var i = 0; i < keys.length; i++) {
+      if (!auctions[keys[i]].expired && moment().toDate() >= auctions[keys[i]].endTime) {
+        auctions[keys[i]].expired = true
+        for (let value in auctions[keys[i]].bets) {
+          let auctionHasWinner = false
+          for (let x in value) {
+            let userName = auctions[keys[i]].bets[value][x]
+
+            if (isWinner(keys[i], userName)) {
+              users[userName].socket.emit('expired', {id: auctions[keys[i]].id, winner: true})
+              users[userName].socket.broadcast.emit('expired', {id: auctions[keys[i]].id, winner: false})
+              auctionHasWinner = true
+              break
+            }
+          }
+          if (!auctionHasWinner)
+            io.sockets.emit('expired', {id: auctions[keys[i]].id, winner: false})
+        }
+      }
+    }
+  }, 1000)
 }
 
 
