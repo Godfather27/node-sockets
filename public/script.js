@@ -70,6 +70,10 @@ socket.on('auctions', function(data){
 	})
 })
 
+socket.on('expired', function(data) {
+	console.log(data)
+})
+
 function logout(){
 	socket.emit('logout', user)
 	$('.user').text('guest')

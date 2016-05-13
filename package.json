@@ -5,6 +5,9 @@
   "main": "server.js",
   "dependencies": {
     "express": "^4.13.4",
+    "mocha": "^2.4.5",
+    "moment": "^2.13.0",
+    "should": "^8.3.1",
     "socket.io": "^1.4.5"
   },
   "devDependencies": {
@@ -15,18 +18,18 @@
     "test": "mocha test.js"
   },
   "contributors": [
-	  {
-	    "name": "Brigitte Jellinek",
-	    "email": "brigitte.jellinek@fh-salzburg.ac.at"
-	  },
-	  {
-		"name": "Josef Krabath",
-		"email": "fhs37235@fh-salzburg.ac.at"
-  	  },
-	  {
-		"name": "Sebastian Huber",
-		"email": "fhs37229@fh-salzburg.ac.at"
-	  }
+    {
+      "name": "Brigitte Jellinek",
+      "email": "brigitte.jellinek@fh-salzburg.ac.at"
+    },
+    {
+      "name": "Josef Krabath",
+      "email": "fhs37235@fh-salzburg.ac.at"
+    },
+    {
+      "name": "Sebastian Huber",
+      "email": "fhs37229@fh-salzburg.ac.at"
+    }
   ],
   "license": "MIT"
 }
