@@ -28,17 +28,21 @@ socket.on('authenticate', function(data){
 })
 
 socket.on('feedback', function(data){
-	console.log(data)
-	$(`#${data.id} .your-bet`).removeClass('hidden')
-	$(`#${data.id}`).addClass('bet')
-	let unique = "Not unique"
-	if(data.betsSet === 1)
-		unique = "Unique"
-	if(data.best)
-		$(`#${data.id}`).addClass('win')
-	else
-		$(`#${data.id}`).removeClass('win')
-	$(`#${data.id} .your-bet`).append(`<p data-value="${data.value}">€ ${data.value} <em>${unique}</em></p>`)
+	if (data.value === undefined){
+		if(!data.best)
+			$(`#${data.id}`).removeClass('win')
+	} else {
+		$(`#${data.id} .your-bet`).removeClass('hidden')
+		$(`#${data.id}`).addClass('bet')
+		let unique = "Not unique"
+		if(data.betsSet === 1)
+			unique = "Unique"
+		if(data.best)
+			$(`#${data.id}`).addClass('win')
+		else
+			$(`#${data.id}`).removeClass('win')
+		$(`#${data.id} .your-bet`).append(`<p data-value="${data.value}">€ ${data.value} <em>${unique}</em></p>`)
+	}
 })
 
 socket.on('auctions', function(data){
@@ -74,11 +78,15 @@ socket.on('auctions', function(data){
 })
 
 socket.on('expired', function(data) {
-	console.log(data)
-	if(data.winner)
+	clearInterval(auctions[data.id].timer);
+	if(data.winner){
 		$(`#${data.id}`).addClass("win")
-	else
+		$(`#${data.id}timer`).val("you won the auction")
+	}
+	else {
+		$(`#${data.id}timer`).val("you lost the auction")
 		$(`#${data.id}`).addClass("lose")
+	}
 })
 
 function logout(){
@@ -98,14 +106,15 @@ function initializeClock(id, endTime){
 			clockValue += t.hours	 + 'h '
 		if(t.minutes != 0)
 			clockValue += t.minutes + 'm '
-		if(t.total > 0)
+		if(t.total > 0){
 			clockValue += t.seconds + 's';
+			$(`#${id}timer`).val(clockValue);
+		}
 		else {
 			$(`#${id} button`).addClass("disabled")
-			clockValue = "auction has closed"
 		}
 		
-		$(`#${id}timer`).val(clockValue);
+		
 
 		if(t.total <= 0){
 			clearInterval(auctions[id].timer);
