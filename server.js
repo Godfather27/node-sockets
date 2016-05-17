@@ -53,38 +53,38 @@ io.on('connection', function(socket){
   console.log('a user connected');
 
   socket.on('login', function(username){
-		if(!alreadyLoggedIn(username)){
-  		users[`${username}`] = {}
-			users[`${username}`].status = true
-			users[`${username}`].socket = socket
+    if(!alreadyLoggedIn(username)){
+      users[`${username}`] = {}
+      users[`${username}`].status = true
+      users[`${username}`].socket = socket
 
-			console.log(`${username} logged in`)
-		
-			socket.emit('authenticate', {authenticated: true, username: username})
-			socket.emit('auctions', auctions)
-		} else {
-			console.log(`${username} didn't log in`)
-			socket.emit('authenticate', {authenticated: false, username: username})
-		}
-  })
+      console.log(`${username} logged in`)
+      
+      socket.emit('authenticate', {authenticated: true, username: username})
+      socket.emit('auctions', auctions)
+    } else {
+     console.log(`${username} didn't log in`)
+     socket.emit('authenticate', {authenticated: false, username: username})
+   }
+ })
 
   socket.on('place-bet', function(data){
   	var bet = {}
   	bet.username = data.username
   	bet.value = data.value
-				
-		if(auctions[data.id].bets[data.value] === undefined)
-			auctions[data.id].bets[data.value] = []
+    
+    if(auctions[data.id].bets[data.value] === undefined)
+     auctions[data.id].bets[data.value] = []
 
-		auctions[data.id].bets[data.value].push(data.username)
-		console.log(`bet set ${data.username}: € ${data.value}`)
+   auctions[data.id].bets[data.value].push(data.username)
+   console.log(`bet set ${data.username}: € ${data.value}`)
 
-		socket.emit('feedback', {id: data.id, value: data.value, betsSet: betsSet(data.id, data.value), best: isWinner(data.id, data.username)})
-  })
+   updateBetStatus(data)
+ })
 
   socket.on('logout', function(name){
   	console.log(name + " logged out")
-		users[`${name}`].status = false
+    users[`${name}`].status = false
   })
 
   socket.on('setBet', function(obj){
@@ -93,11 +93,11 @@ io.on('connection', function(socket){
   socket.on('disconnect', function(){
   	console.log('disconnected')
   	if(Object.keys(users).length !== 0){
-	  	users[findUser(socket)].status = false
-	  	console.log(findUser(socket) + " logged out")
-  	}
+      users[findUser(socket)].status = false
+      console.log(findUser(socket) + " logged out")
+    }
   })
-    
+  
 });
 
 function isWinner(id, username){
@@ -106,11 +106,14 @@ function isWinner(id, username){
 	keys.sort()
 
 	for(let i = 0; i < keys.length; i+=1){
-		if(auctions[id].bets[keys[i]].length === 1)
-			if(auctions[id].bets[keys[i]][0] === username)
+		if(auctions[id].bets[keys[i]].length === 1){
+			if(auctions[id].bets[keys[i]][0] === username){
 				return true;
-	}
-	return false;
+      }
+      return false;
+    }
+  }
+  return false;
 }
 
 function betsSet(id, value){
@@ -138,30 +141,59 @@ function findUser(socket){
 
 // look if time is expired
 function timeIsExpired() {
+  // look if auctions are expired
+  // if so, set expired to true
+
+  // inform all users, if there is a winner
+  // if so, inform winner and all others
+  // if not, inform all that they had lost
+
+
   setInterval(function(){
     let keys = Object.keys(auctions)
+    keys.sort()
 
+    // Iterate through auctions
     for (var i = 0; i < keys.length; i++) {
+      // if auction is not expired and its expired now
       if (!auctions[keys[i]].expired && moment().toDate() >= auctions[keys[i]].endTime) {
         auctions[keys[i]].expired = true
-        for (let value in auctions[keys[i]].bets) {
-          let auctionHasWinner = false
-          for (let x in value) {
-            let userName = auctions[keys[i]].bets[value][x]
+        let betKeys = Object.keys(auctions[keys[i]].bets)
+        betKeys.sort()
+        let hasWinner = false
 
-            if (isWinner(keys[i], userName)) {
-              users[userName].socket.emit('expired', {id: auctions[keys[i]].id, winner: true})
-              users[userName].socket.broadcast.emit('expired', {id: auctions[keys[i]].id, winner: false})
-              auctionHasWinner = true
-              break
-            }
+        //iterate throw bets
+        for (var j = 0; j < betKeys.length; j++) {
+          let userNameArr = auctions[keys[i]].bets[betKeys[j]]
+
+          if (userNameArr.length === 1) {
+            let winner = users[userNameArr[0]]
+            winner.socket.emit('expired', {id: keys[i], winner: true})
+            winner.socket.broadcast.emit('expired', {id: keys[i], winner: false})
+            hasWinner = true
+            break
           }
-          if (!auctionHasWinner)
-            io.sockets.emit('expired', {id: auctions[keys[i]].id, winner: false})
+        }
+
+        if (!hasWinner) {
+          io.sockets.emit('expired', {id: keys[i], winner: false})
         }
       }
     }
   }, 1000)
+}
+
+function updateBetStatus(data) {
+  let id = data.id
+  let user = data.username
+  let value = data.value
+  if (!auctions[id].expired && isWinner(id, user)) {
+    users[user].socket.emit('feedback', {id: id, value: value, betsSet: betsSet(id, value), best: true})
+    users[user].socket.broadcast.emit('feedback', {id: id, value: value, betsSet: betsSet(id, value), best: false})
+  }
+  else if (!auctions[id].expired) {
+    io.sockets.emit('feedback', {id: id, value: value, betsSet: betsSet(id, value), best: false})
+  }
 }
 
 
