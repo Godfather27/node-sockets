@@ -28,19 +28,27 @@ socket.on('authenticate', function(data){
 
 socket.on('feedback', function(data){
 	console.log(data)
+	$(`#${data.id} .your-bet`).removeClass('hidden')
+	let unique = "Not unique"
+	if(data.unique)
+		unique = "Unique"
+	let best = "Not Best"
+	if(data.best)
+		best = "Best"
+	$(`#${data.id} .your-bet`).append(`<p data-value="${data.value}">€ ${data.value} <em>${unique}</em> <em>${best}</em></p>`)
 })
 
 socket.on('auctions', function(data){
 	auctions = data;
 	$.each(auctions, function(index, value){
 		$('#auctions').append(
-			`<div id="${index}" class="col-sm-6 col-md-4">
+			`<div id="${index}" class="third">
 				<div class="thumbnail">
 					<div class="mask">
 			 		 <img class="col-sm-12" src="img/${value.name}.jpeg" alt="${value.name}">
 			 		</div>
 					<div class="caption clearfix">
-						<div class="your-bet"></div>
+						<div class="your-bet hidden"><strong>your bet</strong></div>
 							<h3>${value.name}</h3>
 							<p>Place your bet on the ${value.name}</p>
 							<input readonly id="${index}timer" class="timer" ><br>
