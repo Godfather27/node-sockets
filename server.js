@@ -106,9 +106,13 @@ function isWinner(id, username){
 	keys.sort()
 
 	for(let i = 0; i < keys.length; i+=1){
-		if(auctions[id].bets[keys[i]].length === 1)
-			if(auctions[id].bets[keys[i]][0] === username)
+		if(auctions[id].bets[keys[i]].length === 1){
+			console.log(auctions[id].bets[keys[i]][0])
+			if(auctions[id].bets[keys[i]][0] === username){
 				return true;
+			}
+			return false;
+		}
 	}
 	return false;
 }

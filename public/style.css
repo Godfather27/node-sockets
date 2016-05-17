@@ -13,6 +13,7 @@
 
 .timer {
 	border: none;
+	background: none;
 }
 
 .win > *{

@@ -11,7 +11,8 @@ $('#login-form').submit(function(){
 })
 
 function setBet(id){
-	socket.emit('place-bet', {id: id, username: user, value: $(`#${id}value`).val()})
+	if($(`#${id}timer`).val() != "auction has closed")
+		socket.emit('place-bet', {id: id, username: user, value: $(`#${id}value`).val()})
 }
 
 socket.on('authenticate', function(data){
@@ -29,13 +30,15 @@ socket.on('authenticate', function(data){
 socket.on('feedback', function(data){
 	console.log(data)
 	$(`#${data.id} .your-bet`).removeClass('hidden')
+	$(`#${data.id}`).addClass('bet')
 	let unique = "Not unique"
-	if(data.unique)
+	if(data.betsSet === 1)
 		unique = "Unique"
-	let best = "Not Best"
 	if(data.best)
-		best = "Best"
-	$(`#${data.id} .your-bet`).append(`<p data-value="${data.value}">€ ${data.value} <em>${unique}</em> <em>${best}</em></p>`)
+		$(`#${data.id}`).addClass('win')
+	else
+		$(`#${data.id}`).removeClass('win')
+	$(`#${data.id} .your-bet`).append(`<p data-value="${data.value}">€ ${data.value} <em>${unique}</em></p>`)
 })
 
 socket.on('auctions', function(data){
@@ -72,6 +75,10 @@ socket.on('auctions', function(data){
 
 socket.on('expired', function(data) {
 	console.log(data)
+	if(data.winner)
+		$(`#${data.id}`).addClass("win")
+	else
+		$(`#${data.id}`).addClass("lose")
 })
 
 function logout(){
@@ -93,8 +100,10 @@ function initializeClock(id, endTime){
 			clockValue += t.minutes + 'm '
 		if(t.total > 0)
 			clockValue += t.seconds + 's';
-		else
+		else {
+			$(`#${id} button`).addClass("disabled")
 			clockValue = "auction has closed"
+		}
 		
 		$(`#${id}timer`).val(clockValue);
 
