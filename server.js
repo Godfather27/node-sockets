@@ -50,8 +50,7 @@ let auctions = {
 }
 
 io.on('connection', function(socket){
-  console.log('a user connected');
-
+  console.log(socket)
   socket.on('login', function(username){
     if(!alreadyLoggedIn(username)){
       users[`${username}`] = {}
