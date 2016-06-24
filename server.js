@@ -68,17 +68,22 @@ io.on('connection', function(socket){
  })
 
   socket.on('place-bet', function(data){
-  	var bet = {}
-  	bet.username = data.username
-  	bet.value = data.value
-    
-    if(auctions[data.id].bets[data.value] === undefined)
-     auctions[data.id].bets[data.value] = []
+    if(auctions[data.id].expired){
+      console.log('auction expired')
+      socket.emit('feedback', {error: 'auction has expired'})
+    } else {
+    	var bet = {}
+    	bet.username = data.username
+    	bet.value = data.value
+      
+      if(auctions[data.id].bets[data.value] === undefined)
+       auctions[data.id].bets[data.value] = []
 
-   auctions[data.id].bets[data.value].push(data.username)
-   console.log(`bet set ${data.username}: € ${data.value}`)
+     auctions[data.id].bets[data.value].push(data.username)
+     console.log(`bet set ${data.username}: € ${data.value}`)
 
-   updateBetStatus(data)
+     updateBetStatus(data)
+   }
  })
 
   socket.on('logout', function(name){

@@ -1,3 +1,5 @@
+'use strict'
+
 var socket = io();
 var user;
 var auctions;
@@ -34,14 +36,19 @@ socket.on('feedback', function(data){
 	} else {
 		$(`#${data.id} .your-bet`).removeClass('hidden')
 		$(`#${data.id}`).addClass('bet')
-		let unique = "Not unique"
-		if(data.betsSet === 1)
+		let unique = ""
+		if(data.betsSet === 1){
 			unique = "Unique"
+		} else {
+			unique = "Not unique"
+			console.log(data.betsSet)
+			$(`*[data-value="${data.value}"] em`).text(`Not Unique - ${data.betsSet} same bids`)
+		}
 		if(data.best)
 			$(`#${data.id}`).addClass('win')
 		else
 			$(`#${data.id}`).removeClass('win')
-		$(`#${data.id} .your-bet`).append(`<p data-value="${data.value}">€ ${data.value} <em>${unique}</em></p>`)
+		$(`#${data.id} .your-bet`).append(`<p data-value="${data.value}">€ ${data.value} <em>${unique} - ${data.betsSet} same bids</em></p>`)
 	}
 })
 
